@@ -91,10 +91,10 @@ angular.module('siyfion.sfTypeahead', [])
 
         function updateScope (object, suggestion, dataset) {
           scope.$apply(function () {
-            var modelKeyParser = datasets[dataset].modelKey;
+            var currentDataset = _.findWhere(datasets, {name: dataset}) || datasets[0];
             var value = suggestion;
-            if (angular.isDefined(modelKeyParser)) {
-              value = modelKeyParser(value);
+            if (angular.isDefined(currentDataset) && angular.isDefined(currentDataset.modelKey)) {
+              value = currentDataset.modelKey(value);
             }
             ngModel.$setViewValue(value);
           });
