@@ -30,7 +30,7 @@ angular.module('siyfion.sfTypeahead', [])
 
         // Formats what is going to be displayed (called when: $scope.model = { object })
         ngModel.$formatters.push(function (fromModel) {
-          if (angular.isObject(fromModel) || angular.isUndefined(fromModel)) {
+          if (angular.isObject(fromModel)) {
             var found = false;
             $.each(datasets, function (index, dataset) {
               var query = dataset.source,
@@ -72,7 +72,7 @@ angular.module('siyfion.sfTypeahead', [])
             });
 
             return ''; // loading
-          } else if (fromModel == null) {
+          } else if (fromModel == null || angular.isUndefined(fromModel)) {
             //fromModel has been set to null or undefined
             element.typeahead('val', null);
           }
