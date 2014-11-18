@@ -30,7 +30,7 @@ angular.module('siyfion.sfTypeahead', [])
 
         // Formats what is going to be displayed (called when: $scope.model = { object })
         ngModel.$formatters.push(function (fromModel) {
-          if (angular.isObject(fromModel)) {
+          if (angular.isObject(fromModel) || angular.isUndefined(fromModel)) {
             var found = false;
             $.each(datasets, function (index, dataset) {
               var query = dataset.source,
