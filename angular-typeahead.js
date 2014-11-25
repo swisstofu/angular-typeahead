@@ -75,6 +75,8 @@ angular.module('siyfion.sfTypeahead', [])
           } else if (fromModel == null || angular.isUndefined(fromModel)) {
             //fromModel has been set to null or undefined
             element.typeahead('val', null);
+          } else {
+            element.typeahead('val', fromModel);
           }
           return fromModel;
         });
