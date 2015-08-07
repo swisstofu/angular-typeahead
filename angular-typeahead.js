@@ -6,7 +6,8 @@ angular.module('siyfion.sfTypeahead', [])
       scope: {
         options: '=', // The typeahead configuration options (https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md#options)
         datasets: '=', // The typeahead datasets to use (https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md#datasets)
-        suggestionKey: '@'
+        suggestionKey: '@',
+        modelKey: '@'
       },
       link: function(scope, element, attrs, ngModel) {
         var options = scope.options || {},
@@ -26,14 +27,6 @@ angular.module('siyfion.sfTypeahead', [])
 
         // Parses and validates what is going to be set to model (called when: ngModel.$setViewValue(value))
         ngModel.$parsers.push(function(fromView) {
-          // In Firefox, when the typeahead field loses focus, it fires an extra
-          // angular input update event.  This causes the stored model to be
-          // replaced with the search string.  If the typeahead search string
-          // hasn't changed at all (the 'val' property doesn't update until
-          // after the event loop finishes), then we can bail out early and keep
-          // the current model value.
-          if (fromView === element.typeahead('val')) return ngModel.$modelValue;
-
           // Assuming that all objects are datums
           // See typeahead basics: https://gist.github.com/jharding/9458744#file-the-basics-js-L15
           var isDatum = angular.isObject(fromView);
@@ -41,7 +34,10 @@ angular.module('siyfion.sfTypeahead', [])
             ngModel.$setValidity('typeahead', isDatum);
             return isDatum ? fromView : undefined;
           }
-
+          // if (scope.modelKey) {
+          //   ngModel.$setValidity('typeahead', true);
+          //   return fromView;
+          // }
           return fromView;
         });
 
@@ -63,13 +59,13 @@ angular.module('siyfion.sfTypeahead', [])
               }
 
               // Get suggestions by asynchronous request and updates the view
-              query(value, search);
+              query(value, undefined, search);
               return;
 
               function search(suggestions) {
                 var exists = inArray(suggestions, fromModel);
                 if (exists) {
-                  ngModel.$setViewValue(fromModel);
+                  ngModel.$setViewValue(scope.modelKey ? fromModel[scope.modelKey] : fromModel);
                   found = true;
                 } else {
                   ngModel.$setViewValue(options.editable === false ? undefined : fromModel);
@@ -89,11 +85,9 @@ angular.module('siyfion.sfTypeahead', [])
             });
 
             return ''; // loading
-          } else if (fromModel == null || angular.isUndefined(fromModel)) {
+          } else if (fromModel == null) {
             //fromModel has been set to null or undefined
             element.typeahead('val', null);
-          } else {
-            element.typeahead('val', fromModel);
           }
           return fromModel;
         });
@@ -101,13 +95,16 @@ angular.module('siyfion.sfTypeahead', [])
         function initialize() {
           if (init) {
             element.typeahead(scope.options, scope.datasets)
+            element.on('focus', function() {
+              element.typeahead('val', ngModel.$viewValue);
+            })
             init = false;
           } else {
             // If datasets or options change, hang onto user input until we reinitialize
             var value = element.val();
             element.typeahead('destroy');
             element.typeahead(scope.options, scope.datasets)
-            ngModel.$setViewValue(value);
+              // ngModel.$setViewValue(value);
             element.triggerHandler('typeahead:opened');
           }
         }
@@ -115,7 +112,9 @@ angular.module('siyfion.sfTypeahead', [])
         function inArray(array, element) {
           var found = -1;
           angular.forEach(array, function(value, key) {
-            if (angular.equals(element, value)) {
+            if (angular.isDefined(scope.modelKey) && angular.equals(element[scope.modelKey], value[scope.modelKey])) {
+              found = key;
+            } else if (angular.equals(element, value)) {
               found = key;
             }
           });
@@ -124,17 +123,13 @@ angular.module('siyfion.sfTypeahead', [])
 
         function updateScope(object, suggestion, dataset) {
           scope.$apply(function() {
-            var currentDataset = _.findWhere(datasets, {
-              name: dataset
-            }) || datasets[0];
-            var value = suggestion;
-            if (angular.isDefined(currentDataset) && angular.isDefined(currentDataset.modelKey)) {
-              value = currentDataset.modelKey(value);
+            if (scope.modelKey) {
+              ngModel.$setViewValue(suggestion[scope.modelKey]);
+            } else {
+              var newViewValue = (angular.isDefined(scope.suggestionKey)) ?
+                suggestion[scope.suggestionKey] : suggestion;
+              ngModel.$setViewValue(newViewValue);
             }
-            ngModel.$setViewValue(value);
-            // var newViewValue = (angular.isDefined(scope.suggestionKey)) ?
-            //     suggestion[scope.suggestionKey] : suggestion;
-            // ngModel.$setViewValue(newViewValue);
           });
         }
 
