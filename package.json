@@ -1,8 +1,9 @@
 {
   "name": "angular-typeahead",
-  "version": "0.2.3",
+  "version": "0.3.1",
   "subdomain": "Siyfion",
   "private": true,
+  "main": "angular-typeahead.js",
   "author": "siyfion@gmail.com",
   "description": "An Angular.js wrapper around the Twitter Typeahead library.",
   "contributors": [{
@@ -15,8 +16,9 @@
     "typeahead"
   ],
   "dependencies": {
-    "grunt-contrib-uglify": "~0.2.7",
-    "grunt-ngmin": "~0.0.3",
-    "grunt-contrib-clean": "~0.5.0"
+    "grunt": "1.0.1",
+    "grunt-contrib-uglify": "1.0.1",
+    "grunt-ngmin": "0.0.3",
+    "grunt-contrib-clean": "1.0.0"
   }
 }

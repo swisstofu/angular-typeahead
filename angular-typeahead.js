@@ -14,6 +14,8 @@ angular.module('siyfion.sfTypeahead', [])
           datasets = (angular.isArray(scope.datasets) ? scope.datasets : [scope.datasets]) || [], // normalize to array
           init = true;
 
+        var jqElement = $(element);
+
         // Create the typeahead on the element
         initialize();
 
@@ -27,6 +29,14 @@ angular.module('siyfion.sfTypeahead', [])
 
         // Parses and validates what is going to be set to model (called when: ngModel.$setViewValue(value))
         ngModel.$parsers.push(function(fromView) {
+          // In Firefox, when the typeahead field loses focus, it fires an extra
+          // angular input update event.  This causes the stored model to be
+          // replaced with the search string.  If the typeahead search string
+          // hasn't changed at all (the 'val' property doesn't update until
+          // after the event loop finishes), then we can bail out early and keep
+          // the current model value.
+          if (angular.isObject(ngModel.$modelValue) && fromView === jqElement.typeahead('val')) return ngModel.$modelValue;
+
           // Assuming that all objects are datums
           // See typeahead basics: https://gist.github.com/jharding/9458744#file-the-basics-js-L15
           var isDatum = angular.isObject(fromView);
@@ -77,7 +87,7 @@ angular.module('siyfion.sfTypeahead', [])
                 if (found || index === datasets.length - 1) {
                   setTimeout(function() {
                     scope.$apply(function() {
-                      element.typeahead('val', value);
+                      jqElement.typeahead('val', value);
                     });
                   }, 0);
                 }
@@ -87,25 +97,27 @@ angular.module('siyfion.sfTypeahead', [])
             return ''; // loading
           } else if (fromModel == null) {
             //fromModel has been set to null or undefined
-            element.typeahead('val', null);
+            jqElement.typeahead('val', null);
+          } else {
+            jqElement.typeahead('val', fromModel);
           }
           return fromModel;
         });
 
         function initialize() {
           if (init) {
-            element.typeahead(scope.options, scope.datasets)
-            element.on('focus', function() {
-              element.typeahead('val', ngModel.$viewValue);
+            jqElement.typeahead(scope.options, scope.datasets)
+            jqElement.on('focus', function() {
+              jqElement.typeahead('val', ngModel.$viewValue);
             })
             init = false;
           } else {
             // If datasets or options change, hang onto user input until we reinitialize
-            var value = element.val();
-            element.typeahead('destroy');
-            element.typeahead(scope.options, scope.datasets)
+            var value = jqElement.val();
+            jqElement.typeahead('destroy');
+            jqElement.typeahead(scope.options, scope.datasets)
               // ngModel.$setViewValue(value);
-            element.triggerHandler('typeahead:opened');
+            jqElement.triggerHandler('typeahead:opened');
           }
         }
 
