@@ -1,13 +1,12 @@
 angular.module('siyfion.sfTypeahead', [])
   .directive('sfTypeahead', function() {
     return {
-      restrict: 'AC', // Only apply on an attribute or class
-      require: '?ngModel', // The two-way data bound value that is returned by the directive
+      restrict: 'AC',       // Only apply on an attribute or class
+      require: '?ngModel',  // The two-way data bound value that is returned by the directive
       scope: {
-        options: '=', // The typeahead configuration options (https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md#options)
-        datasets: '=', // The typeahead datasets to use (https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md#datasets)
-        suggestionKey: '@',
-        modelKey: '@'
+        options: '=',       // The typeahead configuration options (https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md#options)
+        datasets: '=',      // The typeahead datasets to use (https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md#datasets)
+        suggestionKey: '@'
       },
       link: function(scope, element, attrs, ngModel) {
         var options = scope.options || {},
@@ -44,10 +43,7 @@ angular.module('siyfion.sfTypeahead', [])
             ngModel.$setValidity('typeahead', isDatum);
             return isDatum ? fromView : undefined;
           }
-          // if (scope.modelKey) {
-          //   ngModel.$setValidity('typeahead', true);
-          //   return fromView;
-          // }
+
           return fromView;
         });
 
@@ -69,13 +65,13 @@ angular.module('siyfion.sfTypeahead', [])
               }
 
               // Get suggestions by asynchronous request and updates the view
-              query(value, undefined, search);
+              query(value, search);
               return;
 
               function search(suggestions) {
                 var exists = inArray(suggestions, fromModel);
                 if (exists) {
-                  ngModel.$setViewValue(scope.modelKey ? fromModel[scope.modelKey] : fromModel);
+                  ngModel.$setViewValue(fromModel);
                   found = true;
                 } else {
                   ngModel.$setViewValue(options.editable === false ? undefined : fromModel);
@@ -87,7 +83,7 @@ angular.module('siyfion.sfTypeahead', [])
                 if (found || index === datasets.length - 1) {
                   setTimeout(function() {
                     scope.$apply(function() {
-                      jqElement.typeahead('val', value);
+                      $(element).typeahead('val', value);
                     });
                   }, 0);
                 }
@@ -106,7 +102,7 @@ angular.module('siyfion.sfTypeahead', [])
 
         function initialize() {
           if (init) {
-            jqElement.typeahead(scope.options, scope.datasets)
+            jqElement.typeahead(scope.options, scope.datasets);
             jqElement.on('focus', function() {
               jqElement.typeahead('val', ngModel.$viewValue);
             })
@@ -116,7 +112,7 @@ angular.module('siyfion.sfTypeahead', [])
             var value = jqElement.val();
             jqElement.typeahead('destroy');
             jqElement.typeahead(scope.options, scope.datasets)
-              // ngModel.$setViewValue(value);
+            // ngModel.$setViewValue(value);
             jqElement.triggerHandler('typeahead:opened');
           }
         }
@@ -124,9 +120,7 @@ angular.module('siyfion.sfTypeahead', [])
         function inArray(array, element) {
           var found = -1;
           angular.forEach(array, function(value, key) {
-            if (angular.isDefined(scope.modelKey) && angular.equals(element[scope.modelKey], value[scope.modelKey])) {
-              found = key;
-            } else if (angular.equals(element, value)) {
+            if (angular.equals(element, value)) {
               found = key;
             }
           });
@@ -135,55 +129,51 @@ angular.module('siyfion.sfTypeahead', [])
 
         function updateScope(object, suggestion, dataset) {
           scope.$apply(function() {
-            if (scope.modelKey) {
-              ngModel.$setViewValue(suggestion[scope.modelKey]);
-            } else {
-              var newViewValue = (angular.isDefined(scope.suggestionKey)) ?
-                suggestion[scope.suggestionKey] : suggestion;
-              ngModel.$setViewValue(newViewValue);
-            }
+            var newViewValue = (angular.isDefined(scope.suggestionKey)) ?
+              suggestion[scope.suggestionKey] : suggestion;
+            ngModel.$setViewValue(newViewValue);
           });
         }
 
         // Update the value binding when a value is manually selected from the dropdown.
-        element.bind('typeahead:selected', function(object, suggestion, dataset) {
+        jqElement.bind('typeahead:selected', function(object, suggestion, dataset) {
           updateScope(object, suggestion, dataset);
           scope.$emit('typeahead:selected', suggestion, dataset);
         });
 
         // Update the value binding when a query is autocompleted.
-        element.bind('typeahead:autocompleted', function(object, suggestion, dataset) {
+        jqElement.bind('typeahead:autocompleted', function(object, suggestion, dataset) {
           updateScope(object, suggestion, dataset);
           scope.$emit('typeahead:autocompleted', suggestion, dataset);
         });
 
         // Propagate the opened event
-        element.bind('typeahead:opened', function() {
+        jqElement.bind('typeahead:opened', function() {
           scope.$emit('typeahead:opened');
         });
 
         // Propagate the closed event
-        element.bind('typeahead:closed', function() {
+        jqElement.bind('typeahead:closed', function() {
           scope.$emit('typeahead:closed');
         });
 
         // Propagate the asyncrequest event
-        element.bind('typeahead:asyncrequest', function() {
+        jqElement.bind('typeahead:asyncrequest', function() {
           scope.$emit('typeahead:asyncrequest');
         });
 
         // Propagate the asynccancel event
-        element.bind('typeahead:asynccancel', function() {
+        jqElement.bind('typeahead:asynccancel', function() {
           scope.$emit('typeahead:asynccancel');
         });
 
         // Propagate the asyncreceive event
-        element.bind('typeahead:asyncreceive', function() {
+        jqElement.bind('typeahead:asyncreceive', function() {
           scope.$emit('typeahead:asyncreceive');
         });
 
         // Propagate the cursorchanged event
-        element.bind('typeahead:cursorchanged', function(event, suggestion, dataset) {
+        jqElement.bind('typeahead:cursorchanged', function(event, suggestion, dataset) {
           scope.$emit('typeahead:cursorchanged', event, suggestion, dataset);
         });
       }
